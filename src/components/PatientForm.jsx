@@ -9,8 +9,14 @@ const PatientForm = ({ onSubmit }) => {
     phone: '',
     address: '',
     adhaar: '',
-    language: 'en-IN'
+    language: 'en-IN',
+    maritalStatus: '',
+    occupation: '',
+    gender: '',
+    photo: null
   });
+
+  const [photoPreview, setPhotoPreview] = useState(null);
 
   const [activeField, setActiveField] = useState(null);
   const [isListening, setIsListening] = useState(false);
@@ -18,6 +24,20 @@ const PatientForm = ({ onSubmit }) => {
   const [browserSupport, setBrowserSupport] = useState(true);
 
   const recognitionRef = useRef(null);
+
+  useEffect(() => {
+    if (!formData.photo) {
+      setPhotoPreview(null);
+      return;
+    }
+
+    const url = URL.createObjectURL(formData.photo);
+    setPhotoPreview(url);
+
+    return () => {
+      URL.revokeObjectURL(url);
+    };
+  }, [formData.photo]);
 
   useEffect(() => {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -139,7 +159,20 @@ const PatientForm = ({ onSubmit }) => {
   };
 
   const handleInputChange = (e) => {
-    const { name, value } = e.target;
+    const { name, value, files, type } = e.target;
+
+    if (type === 'file') {
+      const file = files && files[0] ? files[0] : null;
+      setFormData(prev => ({
+        ...prev,
+        [name]: file
+      }));
+      if (errors[name]) {
+        setErrors(prev => ({ ...prev, [name]: '' }));
+      }
+      return;
+    }
+
     setFormData(prev => ({
       ...prev,
       [name]: value
@@ -274,6 +307,34 @@ const PatientForm = ({ onSubmit }) => {
               )}
             </div>
 
+            {/* Photo upload */}
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Photo / फ़ोटो
+              </label>
+              <div className="flex items-center gap-4">
+                <div className="w-24 h-24 bg-gray-100 rounded-lg overflow-hidden flex items-center justify-center border-2 border-gray-200">
+                  {photoPreview ? (
+                    // eslint-disable-next-line jsx-a11y/img-redundant-alt
+                    <img src={photoPreview} alt="photo preview" className="object-cover w-full h-full" />
+                  ) : (
+                    <div className="text-sm text-gray-500 text-center px-2">No photo</div>
+                  )}
+                </div>
+
+                <div className="flex-1">
+                  <input
+                    type="file"
+                    name="photo"
+                    accept="image/*"
+                    onChange={handleInputChange}
+                    className="block w-full text-sm text-gray-700"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">Upload a clear photo of the patient (optional).</p>
+                </div>
+              </div>
+            </div>
+
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">
                 Age / उम्र
@@ -312,6 +373,85 @@ const PatientForm = ({ onSubmit }) => {
               {errors.age && (
                 <p className="text-red-500 text-sm mt-1">{errors.age}</p>
               )}
+            </div>
+
+            {/* Gender */}
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Gender / लिंग
+              </label>
+              <div className="relative">
+                <select
+                  name="gender"
+                  value={formData.gender}
+                  onChange={handleInputChange}
+                  className="w-full pl-4 pr-4 py-3 rounded-lg border-2 border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all outline-none text-base"
+                >
+                  <option value="">Select gender</option>
+                  <option value="male">Male</option>
+                  <option value="female">Female</option>
+                  <option value="other">Other</option>
+                  <option value="prefer_not_say">Prefer not to say</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Marital Status */}
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Marital Status / वैवाहिक स्थिति
+              </label>
+              <div className="relative">
+                <select
+                  name="maritalStatus"
+                  value={formData.maritalStatus}
+                  onChange={handleInputChange}
+                  className="w-full pl-4 pr-4 py-3 rounded-lg border-2 border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all outline-none text-base"
+                >
+                  <option value="">Select marital status</option>
+                  <option value="single">Single</option>
+                  <option value="married">Married</option>
+                  <option value="widowed">Widowed</option>
+                  <option value="divorced">Divorced</option>
+                  <option value="separated">Separated</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Occupation / Nature of work */}
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Occupation (Nature of work) / पेशा (कार्यक्षेत्र)
+              </label>
+              <div className="relative">
+                <div className="absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none">
+                  <User className="w-5 h-5 text-gray-400" />
+                </div>
+                <input
+                  type="text"
+                  name="occupation"
+                  value={formData.occupation}
+                  onChange={handleInputChange}
+                  placeholder="e.g. Sedentary, Labour-intensive, Field work"
+                  className={`w-full pl-12 pr-14 py-3 rounded-lg border-2 border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all outline-none text-base`}
+                />
+                <button
+                  type="button"
+                  onClick={() => handleVoiceInput('occupation')}
+                  className={`absolute right-3 top-1/2 -translate-y-1/2 p-2 rounded-lg transition-all ${
+                    isListening && activeField === 'occupation'
+                      ? 'bg-red-500 text-white animate-pulse'
+                      : 'bg-blue-100 text-blue-600 hover:bg-blue-200'
+                  }`}
+                  title="Click to start/stop voice input"
+                >
+                  {isListening && activeField === 'occupation' ? (
+                    <Mic className="w-5 h-5" />
+                  ) : (
+                    <MicOff className="w-5 h-5" />
+                  )}
+                </button>
+              </div>
             </div>
 
             <div>
