@@ -8,6 +8,7 @@ const PatientForm = ({ onSubmit }) => {
     age: '',
     phone: '',
     address: '',
+    adhaar: '',
     language: 'en-IN'
   });
 
@@ -365,8 +366,8 @@ const PatientForm = ({ onSubmit }) => {
                 </div>
                 <input
                   type="text"
-                  name="phone"
-                  value={formData.phone}
+                  name="adhaar"
+                  value={formData.adhaar}
                   maxlength='12'
                   onChange={handleInputChange}
                   placeholder="Enter Aadhaar No. "
